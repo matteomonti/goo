@@ -1,4 +1,5 @@
-me": "goo",
+{
+  "name": "goo",
   "version": "0.0.1",
   "description": "Peer to peer using distributed signaling",
   "main": "main.js",
