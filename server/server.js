@@ -1,6 +1,7 @@
 const dgram = require('dgram');
 const idgen = require('idgen');
 const worktoken = require('work-token/sync');
+const crypto = require('crypto');
 const distributions = require('probability-distributions');
 const timer = require('../utils/timer.js');
 
@@ -148,6 +149,25 @@ module.exports = function()
 
       salts.recent[message.salt] = true;
       add(remote);
+    },
+    keepalive: function(message, remote)
+    {
+      if(!(typeof message.token == 'string' && message.token.length == wires.salt.length))
+        return;
+
+      var key = remote.address + ":" + remote.port;
+
+      if(!(peers[key]))
+        return;
+
+      var hash = crypto.createHash('sha256').update(peers[key].salt).digest('buffer');
+      var token = idgen(hash).substring(0, wires.salt.length);
+
+      if(message.token != token)
+        return;
+
+      console.log('Received valid keepalive from', key);
+      peers[key].expire.reset(wires.keepalive.interval * wires.keepalive.margin);
     }
   };
 }
