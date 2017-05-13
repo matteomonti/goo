@@ -16,4 +16,9 @@ var stub = require('./peer/stub.js');
   await my_stub.volunteer();
 
   console.log('Volunteer completed');
+
+  socket.on('message', function(message, remote)
+  {
+    console.log('Received', JSON.parse(message.toString()), 'from', remote);
+  });
 })();

@@ -30,7 +30,7 @@ module.exports = function(socket, host)
         message.token = token;
 
         var buffer = Buffer.from(JSON.stringify(message));
-        socket.send(buffer, 0, buffer.length, wires.server.port, wires.server.host, function(error, bytes)
+        socket.send(buffer, wires.server.port, wires.server.host, function(error, bytes)
         {
           if(error)
             return reject(error);
