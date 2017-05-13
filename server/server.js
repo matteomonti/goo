@@ -9,7 +9,7 @@ module.exports = function()
 
   // Wires
 
-  var wires = {salt: {length: 8}, timestamp: {deadline: 300000, margin: 8}, worktoken: {difficulty: 6}};
+  var wires = {ports: {server: 48607, peer: 48608}, salt: {length: 8}, timestamp: {deadline: 300000, margin: 8}, worktoken: {difficulty: 4}};
 
   // Members
 
@@ -27,11 +27,8 @@ module.exports = function()
 
   // Methods
 
-  self.serve = function(port, host)
+  self.serve = function()
   {
-    if(!port)
-      throw 'Port required.';
-
     return new Promise(function(resolve, reject)
     {
       socket.on('message', message);
@@ -56,7 +53,7 @@ module.exports = function()
 
       setInterval(salts.clean, wires.timestamp.deadline * wires.timestamp.margin);
 
-      socket.bind(port, host);
+      socket.bind(wires.ports.server);
     });
   };
 
@@ -71,7 +68,7 @@ module.exports = function()
       if(!(message.command && message.command in handlers))
         return;
 
-      handlers[message.command](message);
+      handlers[message.command](message, remote);
     }
     catch(error)
     {
@@ -80,12 +77,10 @@ module.exports = function()
 
   var handlers =
   {
-    volunteer: function(message)
+    volunteer: function(message, remote)
     {
-      if(!(typeof message.timestamp == 'number' && typeof message.salt == 'string' && message.salt.length == wires.salt.length && typeof message.token == 'string'))
+      if(!(remote.port == wires.ports.peer && typeof message.timestamp == 'number' && typeof message.salt == 'string' && message.salt.length == wires.salt.length && typeof message.token == 'string'))
         return;
-
-      console.log(message);
 
       if(Math.abs(Date.now() - message.timestamp) > wires.timestamp.deadline)
         return;

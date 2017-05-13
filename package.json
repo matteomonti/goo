@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/matteomonti/goo#readme",
   "dependencies": {
+    "idgen": "^2.0.2",
     "ip": "^1.1.5",
     "nat-upnp": "^1.1.0",
     "native-dns": "^0.7.0",
