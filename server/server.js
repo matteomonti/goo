@@ -2,6 +2,7 @@ const dgram = require('dgram');
 const idgen = require('idgen');
 const worktoken = require('work-token/sync');
 const crypto = require('crypto');
+const fifo = require('fifo');
 const distributions = require('probability-distributions');
 const timer = require('../utils/timer.js');
 
@@ -30,6 +31,17 @@ module.exports = function()
   }
 
   var peers = {};
+
+  var window = -1;
+  var slots = [];
+  var pool = fifo();
+
+  // Getters
+
+  self.window = function()
+  {
+    return window;
+  }
 
   // Methods
 
@@ -65,11 +77,82 @@ module.exports = function()
 
   // Private methods
 
+  var expand = function()
+  {
+    if(window == -1)
+    {
+      if(pool.length > 1)
+      {
+        var peer = pool.shift();
+        slots.push(peer);
+
+        delete peers[peer].pool;
+        peers[peer].slot = 0;
+
+        window = 0;
+      }
+    }
+    else if(pool.length > slots.length)
+    {
+      var new_slots = [];
+
+      for(var i = 0; i < slots.length; i++)
+      {
+        var alpha = slots[i];
+        var beta = pool.shift();
+
+        delete peers[beta].pool;
+        peers[alpha].slot = 2 * i;
+        peers[beta].slot = 2 * i + 1;
+
+        new_slots.push(alpha);
+        new_slots.push(beta);
+      }
+
+      slots = new_slots;
+      window++;
+    }
+  };
+
+  var contract = function()
+  {
+    if(pool.length == 0)
+    {
+      if(window > 0)
+      {
+        var new_slots = [];
+
+        for(var i = 0; i < slots.length / 2; i++)
+        {
+          var alpha = slots[2 * i];
+          var beta = slots[2 * i + 1];
+
+          delete peers[beta].slot;
+          peers[alpha].slot = i;
+          peers[beta].pool = pool.push(beta);
+
+          new_slots.push(alpha);
+        }
+
+        slots = new_slots;
+        window--;
+      }
+      else
+      {
+        var peer = slots[0];
+
+        delete peers[peer].slot;
+        peers[peer].pool = pool.push(peer);
+
+        slots = [];
+        window = -1;
+      }
+    }
+  };
+
   var add = function(address)
   {
     var key = address.address + ":" + address.port;
-
-    console.log('Adding', key);
 
     if(peers[key])
       return;
@@ -97,10 +180,36 @@ module.exports = function()
     keepalive(key);
   };
 
+  var activate = function(key)
+  {
+    if(peers[key].pool || peers[key].slot)
+      return;
+
+    console.log('Activating', key);
+
+    var node = pool.push(key);
+    peers[key].pool = node;
+
+    expand();
+  };
+
   var remove = function(key)
   {
     peers[key].keepalive.cancel();
+
+    if(peers[key].pool)
+      pool.remove(peers[key].pool);
+    else
+    {
+      var peer = pool.shift();
+      slots[peers[key].slot] = peer;
+
+      delete peers[peer].pool;
+      peers[peer].slot = peers[key].slot;
+    }
+
     delete peers[key];
+    contract();
   };
 
   var keepalive = function(key)
@@ -168,6 +277,9 @@ module.exports = function()
 
       console.log('Received valid keepalive from', key);
       peers[key].expire.reset(wires.keepalive.interval * wires.keepalive.margin);
+
+      if(Date.now() - peers[key].timestamp > wires.keepalive.interval * wires.keepalive.margin)
+        activate(key);
     }
   };
 }
