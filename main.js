@@ -1,17 +1,18 @@
 var dgram = require('dgram');
-var public = require('./peer/public.js');
+var upnp = require('./peer/upnp.js');
 
 (async function()
 {
   var socket = dgram.createSocket('udp4');
-  socket.bind(function()
-  {
-    var my_public = new public(socket);
 
-    my_public.on('change', function()
+  socket.bind(async function()
+  {
+    var my_upnp = new upnp(socket, 'test');
+    my_upnp.on('change', function()
     {
-      console.log('Public status changed:', my_public.status());
+      console.log('Change on upnp status:', my_upnp.status());
     });
-    my_public.serve();
+
+    my_upnp.serve();
   });
 })();

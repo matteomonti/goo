@@ -13,6 +13,9 @@ module.exports = function(socket)
   // Wires
 
   var wires = {interval: 30000};
+
+  // Members
+
   var status = false;
 
   // Getters
@@ -36,7 +39,7 @@ module.exports = function(socket)
         {
           var response = await check();
           last = address();
-          
+
           if(response != status)
           {
             status = response;
