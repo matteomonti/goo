@@ -220,7 +220,7 @@ module.exports = function(host)
 
   var activate = function(key)
   {
-    if(peers[key].pool || peers[key].slot)
+    if(peers[key].pool != undefined || peers[key].slot != undefined)
       return;
 
     console.log('Activating', key);
@@ -235,9 +235,10 @@ module.exports = function(host)
   {
     peers[key].keepalive.cancel();
 
-    if(peers[key].pool)
+    if(peers[key].pool != undefined)
       pool.remove(peers[key].pool);
-    else
+
+    if(peers[key].slot != undefined)
     {
       var peer = pool.shift();
       slots[peers[key].slot] = peer;
