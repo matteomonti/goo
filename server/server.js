@@ -17,7 +17,7 @@ module.exports = function(host)
 
   // Wires
 
-  var wires = {host: host || 'goo.rain.vg', ttl: 60, ports: {server: 48607, peer: 48608, dns: 53}, salt: {length: 8}, timestamp: {deadline: 300000, margin: 8}, worktoken: {difficulty: 4}, keepalive: {interval: 30000, margin: 6}};
+  var wires = {host: host || 'goo.rain.vg', ttl: {rendezvous: 60, window: 60, server: 86400}, ports: {server: 48607, peer: 48608, dns: 53}, salt: {length: 8}, timestamp: {deadline: 300000, margin: 8}, worktoken: {difficulty: 4}, keepalive: {interval: 30000, margin: 6}};
 
   // Members
 
@@ -101,14 +101,14 @@ module.exports = function(host)
           {
             name: request.question[i].name,
             address: ip.address(),
-            ttl: 0
+            ttl: wires.ttl.server
           }));
       else if(request.question[i].name == patterns.window && window >= 0)
         response.answer.push(ndns.A(
           {
             name: request.question[i].name,
             address: ip.fromLong(window),
-            ttl: wires.ttl
+            ttl: wires.ttl.window
           }));
     }
 
