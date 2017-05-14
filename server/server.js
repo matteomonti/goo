@@ -175,7 +175,7 @@ module.exports = function(host)
         slots = new_slots;
         window--;
       }
-      else
+      else if(window == 0)
       {
         var peer = slots[0];
 
