@@ -93,14 +93,16 @@ module.exports = function(host)
   {
     for(var i = 0; i < request.question.length; i++)
     {
-      if(request.question[i] == wires.host)
+      console.log('Received request for', request.question[i].name);
+
+      if(request.question[i].name == wires.host)
         response.answer.push(dns.A(
           {
             name: request.question[i],
             address: ip.address().address,
             ttl: 0
           }));
-      else if(request.question[i] == patterns.window && window >= 0)
+      else if(request.question[i].name == patterns.window && window >= 0)
         response.answer.push(dns.A(
           {
             name: request.question[i],
