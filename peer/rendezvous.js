@@ -24,14 +24,48 @@ module.exports = function(host)
 
   // Methods
 
-  self.serve = function()
+  self.serve = async function()
   {
-    socket.on('message', message);
-    socket.bind(wires.port); // TODO: port should be determined with UPnP & public ip diagnostics
-    stub.volunteer();
+    try
+    {
+      await bind(wires.port);
+    }
+    catch(error)
+    {
+      socket = dgram.createSocket('udp4');
+      await bind();
+    }
   };
 
   // Private methods
+
+  var bind = function(port)
+  {
+    return new Promise(function(resolve, reject)
+    {
+      socket.on('message', message);
+
+      var clean = function()
+      {
+        socket.removeAllListeners('listening');
+        socket.removeAllListeners('error');
+      };
+
+      socket.on('listening', function()
+      {
+        clean();
+        resolve();
+      });
+
+      socket.on('error', function()
+      {
+        clean();
+        reject();
+      });
+
+      socket.bind(port);
+    });
+  };
 
   var message = function(message, remote)
   {

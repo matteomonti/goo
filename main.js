@@ -1,11 +1,17 @@
-var server = require('./server/server.js');
-var rendezvous = require('./peer/rendezvous.js');
+var dgram = require('dgram');
+var public = require('./peer/public.js');
 
 (async function()
 {
-  var my_server = new server();
-  await my_server.serve();
+  var socket = dgram.createSocket('udp4');
+  socket.bind(0, '192.168.0.4', function()
+  {
+    var my_public = new public(socket);
 
-  var my_rendezvous = new rendezvous('localhost');
-  my_rendezvous.serve();
+    my_public.on('change', function()
+    {
+      console.log('Public status changes:', my_public.status());
+    });
+    my_public.serve();
+  });
 })();
