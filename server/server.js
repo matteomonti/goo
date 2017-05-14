@@ -4,6 +4,7 @@ const idgen = require('idgen');
 const worktoken = require('work-token/sync');
 const crypto = require('crypto');
 const fifo = require('fifo');
+const ip = require('ip');
 const distributions = require('probability-distributions');
 const timer = require('../utils/timer.js');
 const escape = require('../utils/escape.js');
