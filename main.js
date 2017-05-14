@@ -5,9 +5,4 @@ var rendezvous = require('./peer/rendezvous.js');
 {
   var my_server = new server();
   await my_server.serve();
-
-  var my_rendezvous = new rendezvous('localhost');
-  await my_rendezvous.serve();
-
-  console.log('Rendezvous running.');
 })();

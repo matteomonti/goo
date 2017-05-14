@@ -1,3 +1,4 @@
+const ndns = require('native-dns');
 const dgram = require('dgram');
 const idgen = require('idgen');
 const worktoken = require('work-token/sync');
@@ -5,8 +6,9 @@ const crypto = require('crypto');
 const fifo = require('fifo');
 const distributions = require('probability-distributions');
 const timer = require('../utils/timer.js');
+const escape = require('../utils/escape.js');
 
-module.exports = function()
+module.exports = function(host)
 {
   // Self
 
@@ -14,9 +16,17 @@ module.exports = function()
 
   // Wires
 
-  var wires = {ports: {server: 48607, peer: 48608}, salt: {length: 8}, timestamp: {deadline: 300000, margin: 8}, worktoken: {difficulty: 4}, keepalive: {interval: 30000, margin: 6}};
+  var wires = {host: host || 'goo.rain.vg', ttl: 60, ports: {server: 48607, peer: 48608, dns: 53}, salt: {length: 8}, timestamp: {deadline: 300000, margin: 8}, worktoken: {difficulty: 4}, keepalive: {interval: 30000, margin: 6}};
 
   // Members
+
+  var dns = ndns.createServer();
+
+  var patterns =
+  {
+    rendezvous: new RegExp('^s(\\d+)w(\\d+)\.' + escape(wires.host) + '$'),
+    window: `window.${wires.host}`
+  };
 
   var socket = dgram.createSocket('udp4');
   var salts =
@@ -70,12 +80,28 @@ module.exports = function()
       });
 
       setInterval(salts.clean, wires.timestamp.deadline * wires.timestamp.margin);
-
       socket.bind(wires.ports.server);
+
+      dns.on('request', request);
+      dns.serve(wires.ports.dns);
     });
   };
 
   // Private methods
+
+  var request = function(request, response)
+  {
+    for(var i = 0; i < request.question.length; i++)
+    {
+      if(request.question[i] == patterns.window && window >= 0)
+        response.answer.push(dns.A(
+          {
+            name: request.question[i],
+            address: ip.fromLong(window),
+            ttl: wires.ttl
+          }));
+    }
+  };
 
   var expand = function()
   {
