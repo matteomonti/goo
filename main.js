@@ -1,18 +1,13 @@
-var dgram = require('dgram');
-var upnp = require('./peer/upnp.js');
+var server = require('./server/server.js');
+var rendezvous = require('./peer/rendezvous.js');
 
 (async function()
 {
-  var socket = dgram.createSocket('udp4');
+  var my_server = new server();
+  await my_server.serve();
 
-  socket.bind(async function()
-  {
-    var my_upnp = new upnp(socket, 'test');
-    my_upnp.on('change', function()
-    {
-      console.log('Change on upnp status:', my_upnp.status());
-    });
+  var my_rendezvous = new rendezvous('localhost');
+  await my_rendezvous.serve();
 
-    my_upnp.serve();
-  });
+  console.log('Rendezvous running.');
 })();

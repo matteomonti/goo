@@ -2,6 +2,8 @@ const dgram = require('dgram');
 const dns = require('dns');
 const idgen = require('idgen');
 const sstub = require('./stub.js');
+const ppublic = require('./public.js');
+const uupnp = require('./upnp.js');
 
 module.exports = function(host)
 {
@@ -20,7 +22,9 @@ module.exports = function(host)
   // Members
 
   var socket = dgram.createSocket('udp4');
-  var stub = new sstub(socket, wires.server.host);
+  var stub;
+  var public;
+  var upnp;
 
   // Methods
 
@@ -35,9 +39,32 @@ module.exports = function(host)
       socket = dgram.createSocket('udp4');
       await bind();
     }
+
+    stub = new sstub(socket, wires.server.host);
+    public = new ppublic(socket);
+    upnp = new uupnp(socket, 'test'); // TODO: implement identifier
+
+    public.on('change', toggle);
+    upnp.on('change', toggle);
+
+    public.serve();
+    upnp.serve();
   };
 
   // Private methods
+
+  var toggle = function()
+  {
+    if(upnp.status() || (socket.address().port == wires.port && public.status()))
+    {
+      console.log('Volunteering.');
+      stub.volunteer();
+    }
+    else
+    {
+      // TODO: Should we disable keepalives, maybe?
+    }
+  }
 
   var bind = function(port)
   {

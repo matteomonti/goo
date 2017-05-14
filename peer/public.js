@@ -51,7 +51,7 @@ module.exports = function(socket)
         }
       }
 
-      sleep(wires.interval);
+      await sleep(wires.interval);
     };
   };
 
