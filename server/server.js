@@ -111,6 +111,8 @@ module.exports = function(host)
             ttl: wires.ttl
           }));
     }
+
+    response.send();
   };
 
   var expand = function()
