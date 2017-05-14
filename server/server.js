@@ -100,7 +100,7 @@ module.exports = function(host)
         response.answer.push(ndns.A(
           {
             name: request.question[i],
-            address: ip.address().address,
+            address: ip.address(),
             ttl: 0
           }));
       else if(request.question[i].name == patterns.window && window >= 0)
