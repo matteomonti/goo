@@ -99,14 +99,14 @@ module.exports = function(host)
       if(request.question[i].name == wires.host)
         response.answer.push(ndns.A(
           {
-            name: request.question[i],
+            name: request.question[i].name,
             address: ip.address(),
             ttl: 0
           }));
       else if(request.question[i].name == patterns.window && window >= 0)
         response.answer.push(ndns.A(
           {
-            name: request.question[i],
+            name: request.question[i].name,
             address: ip.fromLong(window),
             ttl: wires.ttl
           }));
