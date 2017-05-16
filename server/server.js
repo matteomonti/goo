@@ -25,7 +25,7 @@ module.exports = function(host)
 
   var patterns =
   {
-    rendezvous: new RegExp('^s(\\d+)w(\\d+)\.' + escape(wires.host) + '$'),
+    rendezvous: new RegExp('^r(\\d+)w(\\d+)\.' + escape(wires.host) + '$'),
     window: `window.${wires.host}`
   };
 
@@ -81,7 +81,7 @@ module.exports = function(host)
       });
 
       setInterval(salts.clean, wires.timestamp.deadline * wires.timestamp.margin);
-      socket.bind(wires.ports.server);
+      socket.bind(wires.ports.server, ip.address());
 
       dns.on('request', request);
       dns.serve(wires.ports.dns);
@@ -110,6 +110,29 @@ module.exports = function(host)
             address: ip.fromLong(window),
             ttl: wires.ttl.window
           }));
+      else
+      {
+        var match = request.question[i].name.match(patterns.rendezvous);
+        if(match && window >= 0)
+        {
+          var question = {window: parseInt(match[2]), rendezvous: parseInt(match[1])};
+
+          if(question.rendezvous >= (2 ** question.window))
+            continue;
+
+          question.rendezvous = Math.floor(question.rendezvous * (2 ** (window - question.window)));
+          question.window = window;
+
+          console.log(question);
+
+          response.answer.push(ndns.A(
+            {
+              name: request.question[i].name,
+              address: peers[slots[question.rendezvous]].address.address,
+              ttl: wires.ttl.rendezvous
+            }));
+        }
+      }
     }
 
     response.send();

@@ -5,7 +5,7 @@ const sstub = require('./stub.js');
 const ppublic = require('./public.js');
 const uupnp = require('./upnp.js');
 
-module.exports = function(host)
+module.exports = function(host, ip)
 {
   // Self
 
@@ -30,14 +30,15 @@ module.exports = function(host)
 
   self.serve = async function()
   {
+    console.log('Serving on', ip);
     try
     {
-      await bind(wires.port);
+      await bind(wires.port, ip);
     }
     catch(error)
     {
       socket = dgram.createSocket('udp4');
-      await bind();
+      await bind(0, ip);
     }
 
     stub = new sstub(socket, wires.server.host);
@@ -66,7 +67,7 @@ module.exports = function(host)
     }
   }
 
-  var bind = function(port)
+  var bind = function(port, address)
   {
     return new Promise(function(resolve, reject)
     {
@@ -84,13 +85,13 @@ module.exports = function(host)
         resolve();
       });
 
-      socket.on('error', function()
+      socket.on('error', function(error)
       {
         clean();
-        reject();
+        reject(error);
       });
 
-      socket.bind(port);
+      socket.bind(port, address);
     });
   };
 
