@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/matteomonti/goo#readme",
   "dependencies": {
+    "ed25519-supercop": "^1.0.2",
     "fifo": "^2.3.0",
     "idgen": "^2.0.2",
     "ip": "^1.1.5",

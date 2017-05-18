@@ -1,9 +1,11 @@
 const dgram = require('dgram');
 const dns = require('dns');
 const idgen = require('idgen');
+const ed = require('ed25519-supercop');
 const sstub = require('./stub.js');
 const ppublic = require('./public.js');
 const uupnp = require('./upnp.js');
+const timer = require('../utils/timer.js');
 
 module.exports = function(host, ip)
 {
@@ -13,7 +15,7 @@ module.exports = function(host, ip)
 
   // Wires
 
-  var wires = {server: {host: host || 'goo.rain.vg', port: 48607}, port: 48608, salt: {length: 8}};
+  var wires = {server: {host: host || 'goo.rain.vg', port: 48607}, port: 48608, salt: {length: 8}, token: {length: 8, lifetime: 300000}, keepalive: {timeout: 300000}};
   dns.lookup(wires.server.host, function(error, address, family)
   {
     wires.server.address = address;
@@ -26,11 +28,27 @@ module.exports = function(host, ip)
   var public;
   var upnp;
 
+  var tokens =
+  {
+    old: {},
+    recent: {},
+    clean: function()
+    {
+      tokens.old = tokens.recent;
+      tokens.recent = {};
+    }
+  };
+
+  var subscribers = {};
+
   // Methods
 
   self.serve = async function()
   {
     console.log('Serving on', ip);
+
+    setInterval(tokens.clean, wires.token.lifetime);
+
     try
     {
       await bind(wires.port, ip);
@@ -115,10 +133,35 @@ module.exports = function(host, ip)
   {
     keepalive: function(message, remote)
     {
+      console.log(`[${ip}] Received keepalive request.`);
       if(!(remote.address == wires.server.address && remote.port == wires.server.port && typeof(message.salt) == 'string' && message.salt.length == wires.salt.length))
         return;
 
       stub.keepalive(message.salt);
+    },
+    token: function(message, remote)
+    {
+      var response = {command: 'token', token: idgen(wires.token.length)};
+      tokens.recent[response.token] = true;
+
+      var buffer = Buffer.from(JSON.stringify(response));
+      socket.send(buffer, remote.port, remote.address);
+    },
+    subscribe: function(message, remote)
+    {
+      if(!(typeof message.key == 'string' && typeof message.token == 'string' && typeof message.salt == 'string' && typeof message.signature == 'string'))
+        return;
+
+      if(!(tokens.recent[message.token] || tokens.old[message.token]))
+        return;
+
+      delete tokens.recent[message.token];
+      delete tokens.old[message.token];
+
+      if(!(ed.verify(message.signature, message.token + message.salt, message.key)))
+        return;
+
+      console.log('Received valid subscribe request.');
     }
   };
 };

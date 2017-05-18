@@ -276,6 +276,7 @@ module.exports = function(host)
 
   var keepalive = function(key)
   {
+    console.log(`[server -> ${peers[key].address.address}] Sending keepalive request.`)
     peers[key].salt = idgen(wires.salt.length);
 
     var message = {command: 'keepalive', salt: peers[key].salt};
@@ -337,7 +338,7 @@ module.exports = function(host)
       if(message.token != token)
         return;
 
-      console.log('Received valid keepalive from', key);
+      console.log(`[server <- ${peers[key].address.address}] Received keepalive.`);
       peers[key].expire.reset(wires.keepalive.interval * wires.keepalive.margin);
 
       if(Date.now() - peers[key].timestamp > wires.keepalive.interval * wires.keepalive.margin)

@@ -31,4 +31,9 @@ var rendezvous = require('./peer/rendezvous.js');
       console.log(error);
     }
   }
+  else
+  {
+    var my_rendezvous = new rendezvous();
+    my_rendezvous.serve();
+  }
 })();
